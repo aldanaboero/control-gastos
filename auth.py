@@ -5,7 +5,7 @@ def hash_password(password):
     return bcrypt.hashpw(password.encode(), bcrypt.gensalt())
 
 def verify_password(password, hashed):
-    return bcrypt.checkpw(password.encode(), hashed)
+    return bcrypt.checkpw(password.encode(), bytes(hashed))
 
 def register_user(email, password):
 
