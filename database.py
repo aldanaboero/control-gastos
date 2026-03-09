@@ -8,8 +8,8 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS users(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        email TEXT,
-        password TEXT
+        email TEXT UNIQUE,
+        password BLOB
     )
     """)
 
@@ -24,7 +24,8 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS incomes(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        account_id INTEGER,
+        user_id INTEGER,
+        account TEXT,
         description TEXT,
         amount REAL,
         method TEXT,
@@ -35,7 +36,8 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS expenses(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        account_id INTEGER,
+        user_id INTEGER,
+        account TEXT,
         category TEXT,
         description TEXT,
         amount REAL,
@@ -48,7 +50,7 @@ def create_tables():
     cursor.execute("""
     CREATE TABLE IF NOT EXISTS suppliers(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        account_id INTEGER,
+        user_id INTEGER,
         name TEXT,
         product TEXT,
         amount REAL,
