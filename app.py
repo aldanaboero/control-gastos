@@ -10,16 +10,28 @@ st.set_page_config(page_title="Gestor Financiero Avanzado", layout="wide")
 # ========================
 st.title("💰 Gestor Financiero Avanzado")
 
-# Corregimos el error de StreamlitMixedNumericTypesError
-sueldo = st.number_input("💵 Ingresos mensuales", min_value=0.0, value=float(0), step=1000.0)
-limite_tarjeta = st.number_input("💳 Límite tarjeta de crédito", min_value=0.0, value=float(0), step=1000.0)
+# Todos los valores numéricos son float para evitar errores
+sueldo = st.number_input(
+    "💵 Ingresos mensuales", 
+    min_value=0.0, 
+    value=0.0,       
+    step=1000.0      
+)
+
+limite_tarjeta = st.number_input(
+    "💳 Límite tarjeta de crédito", 
+    min_value=0.0, 
+    value=0.0,       
+    step=1000.0      
+)
 
 # ========================
 # BASE DE DATOS
 # ========================
 if "gastos" not in st.session_state:
     st.session_state.gastos = pd.DataFrame(columns=[
-        "Fecha","Categoria","Metodo","Descripcion","Monto","Cuotas","Cuota_actual","Persona","Transferencia_a"
+        "Fecha","Categoria","Metodo","Descripcion","Monto","Cuotas",
+        "Cuota_actual","Persona","Transferencia_a"
     ])
 
 df = st.session_state.gastos
@@ -28,7 +40,6 @@ df = st.session_state.gastos
 # REGISTRAR GASTO
 # ========================
 st.header("➕ Agregar gasto")
-
 col1, col2, col3 = st.columns(3)
 
 with col1:
@@ -44,7 +55,7 @@ with col2:
         "💳 Método de pago",
         ["Efectivo","Tarjeta de crédito","Transferencia","Débito"]
     )
-    monto = st.number_input("💰 Monto", min_value=0.0, step=100.0)
+    monto = st.number_input("💰 Monto del gasto", min_value=0.0, value=0.0, step=100.0)
 
 with col3:
     descripcion = st.text_input("📝 Descripción")
@@ -57,8 +68,8 @@ with col3:
 cuotas = 1
 cuota_actual = 1
 if metodo == "Tarjeta de crédito":
-    cuotas = st.number_input("Número de cuotas", min_value=1, step=1)
-    cuota_actual = st.number_input("Cuota actual", min_value=1, max_value=cuotas, step=1)
+    cuotas = st.number_input("Número de cuotas", min_value=1, value=1, step=1)
+    cuota_actual = st.number_input("Cuota actual", min_value=1, max_value=cuotas, value=1, step=1)
 
 if st.button("Agregar gasto"):
     nuevo = pd.DataFrame({
@@ -76,7 +87,7 @@ if st.button("Agregar gasto"):
     st.success("Gasto agregado ✅")
 
 # ========================
-# LISTA DE GASTOS Y BORRAR
+# HISTORIAL Y BORRAR FILAS
 # ========================
 st.header("📋 Historial de gastos")
 df = st.session_state.gastos
@@ -84,7 +95,6 @@ df_display = df.copy()
 df_display["Monto por cuota"] = df_display["Monto"]/df_display["Cuotas"]
 st.dataframe(df_display, use_container_width=True)
 
-# Eliminar fila
 if not df.empty:
     fila_a_borrar = st.number_input("Número de fila para eliminar (comienza en 0)", min_value=0, max_value=len(df)-1, step=1)
     if st.button("Eliminar fila"):
@@ -92,7 +102,7 @@ if not df.empty:
         st.success("Fila eliminada ✅")
 
 # ========================
-# CÁLCULOS
+# CÁLCULOS PRINCIPALES
 # ========================
 total_gastos = df["Monto"].sum()
 restante = sueldo - total_gastos
@@ -109,7 +119,7 @@ col4.metric("💳 Tarjeta usada", f"${gastos_tarjeta} / {limite_tarjeta}")
 st.progress(min(gastos_tarjeta/limite_tarjeta,1) if limite_tarjeta>0 else 0)
 
 # ========================
-# GRÁFICOS COLOREADOS
+# GRÁFICOS
 # ========================
 st.header("📊 Visualización de gastos")
 colores_metodo = {"Efectivo":"green","Tarjeta de crédito":"blue","Transferencia":"purple","Débito":"orange"}
@@ -139,7 +149,7 @@ if not df.empty:
     st.pyplot(fig3)
 
 # ========================
-# ANÁLISIS AUTOMÁTICO (IA)
+# ANÁLISIS AUTOMÁTICO
 # ========================
 st.header("🤖 Análisis automático")
 if not df.empty:
@@ -155,7 +165,7 @@ if not df.empty:
         st.success("👍 Tus gastos están bajo control")
 
 # ========================
-# EXPORTAR A CSV
+# EXPORTAR CSV
 # ========================
 st.header("📥 Exportar datos")
 df_export = df.copy()
