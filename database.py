@@ -14,14 +14,6 @@ def create_tables():
     """)
 
     cursor.execute("""
-    CREATE TABLE IF NOT EXISTS accounts(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER,
-        name TEXT
-    )
-    """)
-
-    cursor.execute("""
     CREATE TABLE IF NOT EXISTS incomes(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER,
