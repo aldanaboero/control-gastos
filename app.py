@@ -7,11 +7,9 @@ from auth import *
 
 create_tables()
 
-st.set_page_config(page_title="Finance App", layout="wide")
+st.set_page_config(page_title="Finance Manager", layout="wide")
 
-st.title("💰 Control de Gastos")
-
-# SESSION
+st.title("💰 Finance Manager")
 
 if "user" not in st.session_state:
     st.session_state.user = None
@@ -35,7 +33,6 @@ if st.session_state.user is None:
         if st.button("Crear usuario"):
 
             register_user(email,password)
-
             st.success("Usuario creado")
 
     if menu == "Login":
@@ -58,11 +55,9 @@ if st.session_state.user is None:
 
                 st.error("Credenciales incorrectas")
 
-# APP
+# APP PRINCIPAL
 
 if st.session_state.user:
-
-    st.sidebar.success("Usuario conectado")
 
     if st.sidebar.button("Logout"):
 
@@ -74,29 +69,30 @@ if st.session_state.user:
         ["Personal","Negocio"]
     )
 
-    tabs = st.tabs([
-        "Dashboard",
-        "Ingresos",
-        "Gastos",
-        "Proveedores"
-    ])
+    if account == "Negocio":
+        tabs = st.tabs(["Dashboard","Ingresos","Gastos","Proveedores"])
+    else:
+        tabs = st.tabs(["Dashboard","Ingresos","Gastos"])
 
 # DASHBOARD
 
     with tabs[0]:
 
         expenses = pd.read_sql_query(
-            f"SELECT * FROM expenses WHERE user_id={st.session_state.user}",
-            conn
+            "SELECT * FROM expenses WHERE user_id=?",
+            conn,
+            params=(st.session_state.user,)
         )
 
         incomes = pd.read_sql_query(
-            f"SELECT * FROM incomes WHERE user_id={st.session_state.user}",
-            conn
+            "SELECT * FROM incomes WHERE user_id=?",
+            conn,
+            params=(st.session_state.user,)
         )
 
         total_income = incomes["amount"].sum() if not incomes.empty else 0
         total_expenses = expenses["amount"].sum() if not expenses.empty else 0
+
         balance = total_income - total_expenses
 
         col1,col2,col3 = st.columns(3)
@@ -111,16 +107,47 @@ if st.session_state.user:
                 expenses,
                 names="category",
                 values="amount",
-                height=350
+                height=350,
+                title="Gastos por categoría"
             )
 
             st.plotly_chart(fig, use_container_width=True)
 
+        if not expenses.empty:
+
+            expenses["date"] = pd.to_datetime(expenses["date"])
+
+            monthly = expenses.groupby(
+                expenses["date"].dt.month
+            )["amount"].sum().reset_index()
+
+            fig2 = px.bar(
+                monthly,
+                x="date",
+                y="amount",
+                height=350,
+                title="Gastos por mes"
+            )
+
+            st.plotly_chart(fig2,use_container_width=True)
+
+        if not expenses.empty:
+
+            st.subheader("Análisis financiero")
+
+            category_sum = expenses.groupby("category")["amount"].sum()
+
+            top = category_sum.idxmax()
+
+            percent = (category_sum.max()/total_expenses)*100
+
+            st.write(
+                f"⚠ Tu mayor gasto es **{top}** ({percent:.1f}% del total)"
+            )
+
 # INGRESOS
 
     with tabs[1]:
-
-        st.subheader("Agregar ingreso")
 
         desc = st.text_input("Descripción", key="income_desc")
 
@@ -128,7 +155,7 @@ if st.session_state.user:
 
         method = st.selectbox(
             "Medio",
-            ["Efectivo","Mercado Pago","Transferencia"],
+            ["Efectivo","Transferencia","Mercado Pago"],
             key="income_method"
         )
 
@@ -149,8 +176,6 @@ if st.session_state.user:
 
     with tabs[2]:
 
-        st.subheader("Agregar gasto")
-
         category = st.selectbox(
             "Categoría",
             ["Comida","Transporte","Compras","Salud","Casa"],
@@ -163,7 +188,7 @@ if st.session_state.user:
 
         method = st.selectbox(
             "Medio de pago",
-            ["Efectivo","Mercado Pago","Tarjeta"],
+            ["Efectivo","Transferencia","Mercado Pago","Tarjeta"],
             key="expense_method"
         )
 
@@ -190,13 +215,11 @@ if st.session_state.user:
 
             st.success("Gasto guardado")
 
-# PROVEEDORES (NEGOCIO)
+# PROVEEDORES
 
-    with tabs[3]:
+    if account == "Negocio":
 
-        if account == "Negocio":
-
-            st.subheader("Proveedores")
+        with tabs[3]:
 
             name = st.text_input("Proveedor", key="supplier_name")
 
@@ -222,7 +245,3 @@ if st.session_state.user:
                 conn.commit()
 
                 st.success("Proveedor guardado")
-
-        else:
-
-            st.info("Esta sección es solo para cuentas de negocio.")
